@@ -1,0 +1,18 @@
+.DS_Store
+
+# Go
+backend/bin/
+backend/coverage.out
+
+# Flutter
+mobile/.dart_tool/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/build/
+
+# Local env
+backend/.env
+
+# Docker volumes
+postgres_data/
+minio_data/
