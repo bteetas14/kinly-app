@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/api_client.dart';
+import '../../core/kinly_brand.dart';
+import '../../core/responsive.dart';
 import '../../core/widgets.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -26,7 +28,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final api = ref.watch(apiClientProvider);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Kinly'),
+        title: const KinlyTitle(),
         centerTitle: false,
         actions: [
           IconButton(
@@ -36,60 +38,72 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: () async {},
-        child: ListView(
-          children: [
-            HomeSearchHeader(
-              controller: search,
-              onSearch: _submitSearch,
+      body: KinlyPageFrame(
+        maxWidth: 1080,
+        child: RefreshIndicator(
+          onRefresh: () async {},
+          child: ListView(
+            padding: EdgeInsets.only(
+              bottom: kinlyIsDesktop(context) ? 24 : 96,
             ),
-            const SectionHeader('Trending Products'),
-            SizedBox(
-              height: 250,
-              child: AsyncList(
-                future: _list(
-                    api, '/products', {'sort': 'trending', 'page_size': 5}),
-                itemBuilder: (context, item) => ProductCard(
-                  product: item,
-                  onTap: () => context.go('/explore/products/${item['id']}'),
+            children: [
+              HomeSearchHeader(
+                controller: search,
+                onSearch: _submitSearch,
+              ),
+              CategoryBrowse(
+                future: _list(api, '/categories', const {}),
+              ),
+              BrandBrowse(
+                future: _list(api, '/brands', {'page_size': 8}),
+              ),
+              const SectionHeader('Trending Products'),
+              SizedBox(
+                height: 250,
+                child: AsyncList(
+                  future: _list(
+                      api, '/products', {'sort': 'trending', 'page_size': 5}),
+                  itemBuilder: (context, item) => ProductCard(
+                    product: item,
+                    onTap: () => context.go('/products/${item['id']}'),
+                  ),
                 ),
               ),
-            ),
-            const SectionHeader('Popular Discussions'),
-            SizedBox(
-              height: 250,
-              child: AsyncList(
-                future: _list(api, '/posts', {'page_size': 5}),
-                itemBuilder: (context, item) => PostCard(
-                  post: item,
-                  onTap: () => context.go('/community/posts/${item['id']}'),
+              const SectionHeader('Popular Discussions'),
+              SizedBox(
+                height: 250,
+                child: AsyncList(
+                  future: _list(api, '/posts', {'page_size': 5}),
+                  itemBuilder: (context, item) => PostCard(
+                    post: item,
+                    onTap: () => context.go('/community/posts/${item['id']}'),
+                  ),
                 ),
               ),
-            ),
-            const SectionHeader('Recently Reviewed Products'),
-            SizedBox(
-              height: 250,
-              child: AsyncList(
-                future:
-                    _list(api, '/products', {'sort': 'newest', 'page_size': 5}),
-                itemBuilder: (context, item) => ProductCard(
-                    product: item,
-                    onTap: () => context.go('/explore/products/${item['id']}')),
+              const SectionHeader('Recently Reviewed Products'),
+              SizedBox(
+                height: 250,
+                child: AsyncList(
+                  future: _list(
+                      api, '/products', {'sort': 'newest', 'page_size': 5}),
+                  itemBuilder: (context, item) => ProductCard(
+                      product: item,
+                      onTap: () => context.go('/products/${item['id']}')),
+                ),
               ),
-            ),
-            const SectionHeader('Community Picks'),
-            SizedBox(
-              height: 250,
-              child: AsyncList(
-                future: _list(api, '/products',
-                    {'sort': 'highest_rated', 'page_size': 5}),
-                itemBuilder: (context, item) => ProductCard(
-                    product: item,
-                    onTap: () => context.go('/explore/products/${item['id']}')),
+              const SectionHeader('Community Picks'),
+              SizedBox(
+                height: 250,
+                child: AsyncList(
+                  future: _list(api, '/products',
+                      {'sort': 'highest_rated', 'page_size': 5}),
+                  itemBuilder: (context, item) => ProductCard(
+                      product: item,
+                      onTap: () => context.go('/products/${item['id']}')),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -111,6 +125,114 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 }
 
+class CategoryBrowse extends StatelessWidget {
+  const CategoryBrowse({super.key, required this.future});
+
+  final Future<List<dynamic>> future;
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<dynamic>>(
+      future: future,
+      builder: (context, snapshot) {
+        final items = snapshot.data ?? <dynamic>[];
+        if (snapshot.connectionState != ConnectionState.done || items.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SectionHeader('Browse Categories'),
+            SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  for (final item in items.cast<Map<String, dynamic>>()) ...[
+                    ActionChip(
+                      avatar: const Icon(Icons.category_outlined, size: 18),
+                      label: Text(item['name']?.toString() ?? ''),
+                      onPressed: () => context.go(
+                          '/explore?category=${Uri.encodeQueryComponent(item['slug']?.toString() ?? '')}'),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class BrandBrowse extends StatelessWidget {
+  const BrandBrowse({super.key, required this.future});
+
+  final Future<List<dynamic>> future;
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<dynamic>>(
+      future: future,
+      builder: (context, snapshot) {
+        final items = snapshot.data ?? <dynamic>[];
+        if (snapshot.connectionState != ConnectionState.done || items.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SectionHeader('Brands'),
+            SizedBox(
+              height: 112,
+              child: ListView.separated(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                scrollDirection: Axis.horizontal,
+                itemCount: items.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 10),
+                itemBuilder: (context, index) {
+                  final brand = items[index] as Map<String, dynamic>;
+                  return SizedBox(
+                    width: 190,
+                    child: Card(
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: () => context.go('/brands/${brand['id']}'),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Icon(Icons.verified_outlined),
+                              const Spacer(),
+                              Text(
+                                brand['name']?.toString() ?? 'Brand',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleSmall
+                                    ?.copyWith(fontWeight: FontWeight.w700),
+                              ),
+                              Text('${brand['review_count'] ?? 0} reviews'),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
 class HomeSearchHeader extends StatelessWidget {
   const HomeSearchHeader({
     super.key,
@@ -126,11 +248,11 @@ class HomeSearchHeader extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
       decoration: BoxDecoration(
         color: colors.surface,
         border: const Border(
-          bottom: BorderSide(color: Color(0xffdeded8)),
+          bottom: BorderSide(color: Color(0xffe7e1d8)),
         ),
       ),
       child: Column(
@@ -156,11 +278,31 @@ class HomeSearchHeader extends StatelessWidget {
             controller: controller,
             hintText: 'Search products, brands, categories',
             leading: const Icon(Icons.search),
+            elevation: const WidgetStatePropertyAll(0),
+            backgroundColor: WidgetStatePropertyAll(colors.surfaceContainerLow),
+            shape: WidgetStatePropertyAll(
+              RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(28),
+                side: const BorderSide(color: Color(0xffddd7cd)),
+              ),
+            ),
+            padding: const WidgetStatePropertyAll(
+              EdgeInsets.symmetric(horizontal: 16),
+            ),
             trailing: [
-              IconButton(
-                tooltip: 'Search',
-                icon: const Icon(Icons.arrow_forward),
-                onPressed: onSearch,
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: colors.primary,
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  tooltip: 'Search',
+                  color: colors.onPrimary,
+                  icon: const Icon(Icons.arrow_forward, size: 20),
+                  onPressed: onSearch,
+                ),
               ),
             ],
             onSubmitted: (_) => onSearch(),

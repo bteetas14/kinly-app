@@ -9,8 +9,11 @@ import '../features/explore/explore_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/notifications/notifications_screen.dart';
 import '../features/products/product_detail_screen.dart';
+import '../features/products/brand_detail_screen.dart';
 import '../features/profile/profile_screen.dart';
 import 'auth_controller.dart';
+import 'kinly_brand.dart';
+import 'responsive.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final auth = ref.watch(authControllerProvider);
@@ -29,25 +32,28 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     },
     routes: [
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+      GoRoute(
+        path: '/explore',
+        builder: (context, state) => ExploreScreen(
+          initialQuery: state.uri.queryParameters['q'] ?? '',
+          initialCategory: state.uri.queryParameters['category'] ?? '',
+        ),
+      ),
+      GoRoute(
+        path: '/products/:id',
+        builder: (context, state) =>
+            ProductDetailScreen(productId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/brands/:id',
+        builder: (context, state) =>
+            BrandDetailScreen(brandId: state.pathParameters['id']!),
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => AppShell(shell: shell),
         branches: [
           StatefulShellBranch(routes: [
             GoRoute(path: '/', builder: (context, state) => const HomeScreen())
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: '/explore',
-              builder: (context, state) => ExploreScreen(
-                  initialQuery: state.uri.queryParameters['q'] ?? ''),
-              routes: [
-                GoRoute(
-                  path: 'products/:id',
-                  builder: (context, state) => ProductDetailScreen(
-                      productId: state.pathParameters['id']!),
-                ),
-              ],
-            ),
           ]),
           StatefulShellBranch(routes: [
             GoRoute(
@@ -85,34 +91,118 @@ class AppShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final desktop = kinlyIsDesktop(context);
     return Scaffold(
-      body: shell,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: shell.currentIndex,
-        onDestinationSelected: shell.goBranch,
-        destinations: const [
-          NavigationDestination(
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home),
-              label: 'Home'),
-          NavigationDestination(
-              icon: Icon(Icons.search_outlined),
-              selectedIcon: Icon(Icons.search),
-              label: 'Explore'),
-          NavigationDestination(
-              icon: Icon(Icons.forum_outlined),
-              selectedIcon: Icon(Icons.forum),
-              label: 'Community'),
-          NavigationDestination(
-              icon: Icon(Icons.notifications_outlined),
-              selectedIcon: Icon(Icons.notifications),
-              label: 'Notifications'),
-          NavigationDestination(
-              icon: Icon(Icons.person_outline),
-              selectedIcon: Icon(Icons.person),
-              label: 'Profile'),
-        ],
+      body: desktop
+          ? Row(
+              children: [
+                _DesktopNavRail(shell: shell),
+                const VerticalDivider(width: 1),
+                Expanded(child: shell),
+              ],
+            )
+          : shell,
+      extendBody: true,
+      bottomNavigationBar: desktop ? null : _MobileNavBar(shell: shell),
+    );
+  }
+}
+
+class _MobileNavBar extends StatelessWidget {
+  const _MobileNavBar({required this.shell});
+
+  final StatefulNavigationShell shell;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      minimum: const EdgeInsets.fromLTRB(18, 0, 18, 14),
+      child: Material(
+        elevation: 10,
+        color: Theme.of(context).colorScheme.surface,
+        shadowColor: Colors.black.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(28),
+        clipBehavior: Clip.antiAlias,
+        child: NavigationBar(
+          height: 64,
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
+          selectedIndex: shell.currentIndex,
+          onDestinationSelected: shell.goBranch,
+          backgroundColor: Colors.transparent,
+          indicatorColor: Theme.of(context).colorScheme.primaryContainer,
+          destinations: const [
+            NavigationDestination(
+                icon: Icon(Icons.home_outlined),
+                selectedIcon: Icon(Icons.home_rounded),
+                label: 'Home'),
+            NavigationDestination(
+                icon: Icon(Icons.mode_comment_outlined),
+                selectedIcon: Icon(Icons.mode_comment_rounded),
+                label: 'Community'),
+            NavigationDestination(
+                icon: Icon(Icons.notifications_none_rounded),
+                selectedIcon: Icon(Icons.notifications_rounded),
+                label: 'Notifications'),
+            NavigationDestination(
+                icon: Icon(Icons.person_outline_rounded),
+                selectedIcon: Icon(Icons.person_rounded),
+                label: 'Profile'),
+          ],
+        ),
       ),
+    );
+  }
+}
+
+class _DesktopNavRail extends StatelessWidget {
+  const _DesktopNavRail({required this.shell});
+
+  final StatefulNavigationShell shell;
+
+  @override
+  Widget build(BuildContext context) {
+    return NavigationRail(
+      selectedIndex: shell.currentIndex,
+      onDestinationSelected: shell.goBranch,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      indicatorColor: Theme.of(context).colorScheme.primaryContainer,
+      minWidth: 78,
+      labelType: NavigationRailLabelType.none,
+      leading: const Padding(
+        padding: EdgeInsets.only(top: 22, bottom: 20),
+        child: KinlyLogo(size: 38),
+      ),
+      destinations: const [
+        NavigationRailDestination(
+          icon: Tooltip(message: 'Home', child: Icon(Icons.home_outlined)),
+          selectedIcon:
+              Tooltip(message: 'Home', child: Icon(Icons.home_rounded)),
+          label: Text('Home'),
+        ),
+        NavigationRailDestination(
+          icon: Tooltip(
+              message: 'Community', child: Icon(Icons.mode_comment_outlined)),
+          selectedIcon: Tooltip(
+              message: 'Community', child: Icon(Icons.mode_comment_rounded)),
+          label: Text('Community'),
+        ),
+        NavigationRailDestination(
+          icon: Tooltip(
+              message: 'Notifications',
+              child: Icon(Icons.notifications_none_rounded)),
+          selectedIcon: Tooltip(
+              message: 'Notifications',
+              child: Icon(Icons.notifications_rounded)),
+          label: Text('Notifications'),
+        ),
+        NavigationRailDestination(
+          icon: Tooltip(
+              message: 'Profile', child: Icon(Icons.person_outline_rounded)),
+          selectedIcon:
+              Tooltip(message: 'Profile', child: Icon(Icons.person_rounded)),
+          label: Text('Profile'),
+        ),
+      ],
     );
   }
 }

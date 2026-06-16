@@ -31,5 +31,23 @@ func (s *UserService) UpdateProfile(ctx context.Context, userID string, req dto.
 	if err != nil {
 		return dto.UserProfile{}, err
 	}
+	if err := s.store.ReplaceExpertise(ctx, userID, req.Expertise); err != nil {
+		return dto.UserProfile{}, err
+	}
+	if err := s.store.UpdateUserAttributes(ctx, userID, req.SkinType, req.HairType, req.SkinConcerns, req.AgeGroup); err != nil {
+		return dto.UserProfile{}, err
+	}
 	return s.Profile(ctx, userID)
+}
+
+func (s *UserService) SetSavedProduct(ctx context.Context, userID, productID string, saved bool) error {
+	return s.store.SetSavedProduct(ctx, userID, productID, saved)
+}
+
+func (s *UserService) SetWishlistedProduct(ctx context.Context, userID, productID string, wishlisted bool) error {
+	return s.store.SetWishlistedProduct(ctx, userID, productID, wishlisted)
+}
+
+func (s *UserService) SetFavoriteBrand(ctx context.Context, userID, brandID string, favorite bool) error {
+	return s.store.SetFavoriteBrand(ctx, userID, brandID, favorite)
 }

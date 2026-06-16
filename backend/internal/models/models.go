@@ -34,7 +34,10 @@ type Product struct {
 	FragranceFree   bool      `json:"fragrance_free"`
 	Vegan           bool      `json:"vegan"`
 	CommunityScore  float64   `json:"community_score"`
+	TrustScore      float64   `json:"trust_score"`
 	RepurchaseRate  float64   `json:"repurchase_rate"`
+	VerifiedPercent float64   `json:"verified_purchase_percentage"`
+	LongTermPercent float64   `json:"long_term_review_percentage"`
 	ReviewCount     int       `json:"review_count"`
 	TrendingScore   float64   `json:"trending_score"`
 	ProsSummary     []string  `json:"pros_summary"`
@@ -42,12 +45,34 @@ type Product struct {
 	CreatedAt       time.Time `json:"created_at"`
 }
 
+type Category struct {
+	ID            string     `json:"id"`
+	Name          string     `json:"name"`
+	Slug          string     `json:"slug"`
+	Subcategories []Category `json:"subcategories,omitempty"`
+	CreatedAt     time.Time  `json:"created_at"`
+}
+
+type Brand struct {
+	ID                  string    `json:"id"`
+	Name                string    `json:"name"`
+	Description         string    `json:"description"`
+	WebsiteURL          string    `json:"website_url"`
+	CertificationStatus string    `json:"certification_status"`
+	JoinedAt            time.Time `json:"joined_at"`
+	ViolationsCount     int       `json:"violations_count"`
+	DisputesCount       int       `json:"disputes_count"`
+	Status              string    `json:"status"`
+	ProductCount        int       `json:"product_count"`
+	ReviewCount         int       `json:"review_count"`
+	AverageRating       float64   `json:"average_rating"`
+}
+
 type Review struct {
 	ID               string    `json:"id"`
 	ProductID        string    `json:"product_id"`
 	UserID           string    `json:"user_id"`
 	Username         string    `json:"username"`
-	UserTrustScore   int       `json:"user_trust_score"`
 	Rating           int       `json:"rating"`
 	Title            string    `json:"title"`
 	Body             string    `json:"body"`
@@ -58,7 +83,30 @@ type Review struct {
 	VerifiedPurchase bool      `json:"verified_purchase"`
 	HelpfulCount     int       `json:"helpful_count"`
 	Photos           []string  `json:"photos"`
+	PurchaseType     string    `json:"purchase_type"`
+	SkinType         string    `json:"skin_type"`
+	HairType         string    `json:"hair_type"`
+	SkinConcerns     []string  `json:"skin_concerns"`
+	AgeGroup         string    `json:"age_group"`
+	FollowUps        int       `json:"follow_ups_completed"`
+	Confidence       string    `json:"confidence"`
+	ConfidenceScore  int       `json:"confidence_score"`
+	WeightedRating   float64   `json:"weighted_rating"`
+	Status           string    `json:"status"`
+	ReportCount      int       `json:"report_count"`
 	CreatedAt        time.Time `json:"created_at"`
+}
+
+type ReviewFollowup struct {
+	ID            string    `json:"id"`
+	ReviewID      string    `json:"review_id"`
+	UserID        string    `json:"user_id"`
+	Stage         string    `json:"stage"`
+	Body          string    `json:"body"`
+	StillUsing    bool      `json:"still_using"`
+	WouldBuyAgain bool      `json:"would_buy_again"`
+	Repurchased   bool      `json:"repurchased"`
+	CreatedAt     time.Time `json:"created_at"`
 }
 
 type Post struct {
@@ -86,6 +134,15 @@ type Comment struct {
 	AuthorName      string    `json:"author_name"`
 	Body            string    `json:"body"`
 	CreatedAt       time.Time `json:"created_at"`
+}
+
+type Community struct {
+	ID          string    `json:"id"`
+	Name        string    `json:"name"`
+	Slug        string    `json:"slug"`
+	Description string    `json:"description"`
+	PostCount   int       `json:"post_count"`
+	CreatedAt   time.Time `json:"created_at"`
 }
 
 type Notification struct {

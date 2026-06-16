@@ -1,12 +1,12 @@
 {
-    "name": "kinly",
-    "short_name": "kinly",
+    "name": "Kinly",
+    "short_name": "Kinly",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
-    "orientation": "portrait-primary",
+    "background_color": "#faf8f3",
+    "theme_color": "#0f7b68",
+    "description": "Community product discovery, reviews, and discussions for beauty, skincare, haircare, wellness, and fashion.",
+    "orientation": "any",
     "prefer_related_applications": false,
     "icons": [
         {

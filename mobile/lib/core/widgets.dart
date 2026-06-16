@@ -101,18 +101,17 @@ class ProductCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(12),
           child: Row(
             children: [
               Container(
-                width: 44,
-                height: 44,
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
-                  color: colors.secondaryContainer,
+                  color: const Color(0xffd9f2ea),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(Icons.spa_outlined,
-                    color: colors.onSecondaryContainer),
+                child: Icon(Icons.spa_outlined, color: colors.primary),
               ),
               const SizedBox(width: 12),
               Expanded(

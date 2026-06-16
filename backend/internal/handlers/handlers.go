@@ -96,6 +96,44 @@ func (h *Handler) ListProducts(c *gin.Context) {
 	httpx.OK(c, httpx.Page[any]{Data: toAny(products), Page: page.Page, PageSize: page.PageSize, Total: total})
 }
 
+func (h *Handler) Categories(c *gin.Context) {
+	items, err := h.products.Categories(c.Request.Context())
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.OK(c, gin.H{"data": items})
+}
+
+func (h *Handler) Brands(c *gin.Context) {
+	page := utils.ReadPagination(c)
+	items, total, err := h.products.Brands(c.Request.Context(), page.PageSize, page.Offset)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.OK(c, httpx.Page[any]{Data: toAny(items), Page: page.Page, PageSize: page.PageSize, Total: total})
+}
+
+func (h *Handler) BrandDetail(c *gin.Context) {
+	brand, err := h.products.Brand(c.Request.Context(), c.Param("id"))
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.OK(c, brand)
+}
+
+func (h *Handler) BrandProducts(c *gin.Context) {
+	page := utils.ReadPagination(c)
+	items, total, err := h.products.BrandProducts(c.Request.Context(), c.Param("id"), page.PageSize, page.Offset)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.OK(c, httpx.Page[any]{Data: toAny(items), Page: page.Page, PageSize: page.PageSize, Total: total})
+}
+
 func (h *Handler) ProductDetail(c *gin.Context) {
 	detail, err := h.products.Detail(c.Request.Context(), c.Param("id"))
 	if err != nil {
@@ -105,9 +143,70 @@ func (h *Handler) ProductDetail(c *gin.Context) {
 	httpx.OK(c, detail)
 }
 
+func (h *Handler) SuggestProduct(c *gin.Context) {
+	userID, ok := middleware.MustUserID(c)
+	if !ok {
+		return
+	}
+	var req dto.ProductSuggestionRequest
+	if !bind(c, &req) {
+		return
+	}
+	if err := h.products.Suggest(c.Request.Context(), userID, req); err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.NoContent(c)
+}
+
+func (h *Handler) ModerateProduct(c *gin.Context) {
+	var req dto.ProductModerationRequest
+	if !bind(c, &req) {
+		return
+	}
+	if err := h.products.Moderate(c.Request.Context(), c.Param("id"), req); err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.NoContent(c)
+}
+
+func (h *Handler) BrandAnnouncement(c *gin.Context) {
+	userID, ok := middleware.MustUserID(c)
+	if !ok {
+		return
+	}
+	var req dto.BrandAnnouncementRequest
+	if !bind(c, &req) {
+		return
+	}
+	if err := h.products.BrandAnnouncement(c.Request.Context(), userID, c.Param("id"), req); err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.NoContent(c)
+}
+
+func (h *Handler) ProductUpdate(c *gin.Context) {
+	userID, ok := middleware.MustUserID(c)
+	if !ok {
+		return
+	}
+	var req dto.ProductUpdateRequest
+	if !bind(c, &req) {
+		return
+	}
+	if err := h.products.ProductUpdate(c.Request.Context(), userID, c.Param("id"), req); err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.NoContent(c)
+}
+
 func (h *Handler) SearchProducts(c *gin.Context) {
 	page := utils.ReadPagination(c)
-	products, total, err := h.products.Search(c.Request.Context(), c.Query("q"), page.PageSize, page.Offset)
+	filters := readProductFilters(c)
+	products, total, err := h.products.List(c.Request.Context(), filters, page.PageSize, page.Offset)
 	if err != nil {
 		httpx.Fail(c, err)
 		return
@@ -182,6 +281,48 @@ func (h *Handler) ReviewComment(c *gin.Context) {
 	httpx.NoContent(c)
 }
 
+func (h *Handler) ReviewFollowup(c *gin.Context) {
+	userID, ok := middleware.MustUserID(c)
+	if !ok {
+		return
+	}
+	var req dto.ReviewFollowupRequest
+	if !bind(c, &req) {
+		return
+	}
+	followup, err := h.reviews.Followup(c.Request.Context(), userID, c.Param("id"), req)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.Created(c, followup)
+}
+
+func (h *Handler) ReportReview(c *gin.Context) {
+	userID, ok := middleware.MustUserID(c)
+	if !ok {
+		return
+	}
+	var req dto.ReviewReportRequest
+	if !bind(c, &req) {
+		return
+	}
+	if err := h.reviews.Report(c.Request.Context(), userID, c.Param("id"), req); err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.NoContent(c)
+}
+
+func (h *Handler) Communities(c *gin.Context) {
+	items, err := h.community.Communities(c.Request.Context())
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.OK(c, gin.H{"data": items})
+}
+
 func (h *Handler) CreatePost(c *gin.Context) {
 	userID, ok := middleware.MustUserID(c)
 	if !ok {
@@ -216,6 +357,16 @@ func (h *Handler) PostDetail(c *gin.Context) {
 		return
 	}
 	httpx.OK(c, post)
+}
+
+func (h *Handler) PostComments(c *gin.Context) {
+	page := utils.ReadPagination(c)
+	items, total, err := h.community.Comments(c.Request.Context(), c.Param("id"), page.PageSize, page.Offset)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.OK(c, httpx.Page[any]{Data: toAny(items), Page: page.Page, PageSize: page.PageSize, Total: total})
 }
 
 func (h *Handler) CreateComment(c *gin.Context) {
@@ -331,6 +482,42 @@ func (h *Handler) UpdateProfile(c *gin.Context) {
 	httpx.OK(c, profile)
 }
 
+func (h *Handler) SaveProduct(c *gin.Context) {
+	userID, ok := middleware.MustUserID(c)
+	if !ok {
+		return
+	}
+	if err := h.users.SetSavedProduct(c.Request.Context(), userID, c.Param("id"), c.Request.Method != "DELETE"); err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.NoContent(c)
+}
+
+func (h *Handler) WishlistProduct(c *gin.Context) {
+	userID, ok := middleware.MustUserID(c)
+	if !ok {
+		return
+	}
+	if err := h.users.SetWishlistedProduct(c.Request.Context(), userID, c.Param("id"), c.Request.Method != "DELETE"); err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.NoContent(c)
+}
+
+func (h *Handler) FavoriteBrand(c *gin.Context) {
+	userID, ok := middleware.MustUserID(c)
+	if !ok {
+		return
+	}
+	if err := h.users.SetFavoriteBrand(c.Request.Context(), userID, c.Param("id"), c.Request.Method != "DELETE"); err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.NoContent(c)
+}
+
 func bind(c *gin.Context, target any) bool {
 	if err := c.ShouldBindJSON(target); err != nil {
 		httpx.Validation(c, map[string]string{"body": err.Error()})
@@ -351,6 +538,7 @@ func readProductFilters(c *gin.Context) dto.ProductFilters {
 		CrueltyFree:   optionalBool(c.Query("cruelty_free")),
 		FragranceFree: optionalBool(c.Query("fragrance_free")),
 		Vegan:         optionalBool(c.Query("vegan")),
+		Category:      c.Query("category"),
 	}
 }
 

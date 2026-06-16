@@ -19,6 +19,10 @@ func NewCommunityService(store *repositories.Store) *CommunityService {
 	return &CommunityService{store: store}
 }
 
+func (s *CommunityService) Communities(ctx context.Context) ([]models.Community, error) {
+	return s.store.Communities(ctx)
+}
+
 func (s *CommunityService) CreatePost(ctx context.Context, userID string, req dto.CreatePostRequest) (models.Post, error) {
 	return s.store.CreatePost(ctx, userID, req)
 }
@@ -37,6 +41,10 @@ func (s *CommunityService) Post(ctx context.Context, id string) (models.Post, er
 
 func (s *CommunityService) CreateComment(ctx context.Context, userID string, req dto.CreateCommentRequest) (models.Comment, error) {
 	return s.store.CreateComment(ctx, userID, req)
+}
+
+func (s *CommunityService) Comments(ctx context.Context, postID string, limit, offset int) ([]models.Comment, int64, error) {
+	return s.store.CommentsForPost(ctx, postID, limit, offset)
 }
 
 func (s *CommunityService) DeleteComment(ctx context.Context, userID, commentID string) error {

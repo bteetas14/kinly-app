@@ -127,6 +127,21 @@ http://127.0.0.1:3000
 
 To stop Flutter Web, press `q` in the Flutter terminal.
 
+For a production web build:
+
+```sh
+cd /Users/teetasbhuiya/Developer/Kinly/mobile
+flutter build web --dart-define=API_BASE_URL=https://your-api-domain.example
+```
+
+The built web app is written to:
+
+```text
+mobile/build/web
+```
+
+Kinly Web uses clean browser URLs such as `/products/{id}` and `/community/posts/{id}`. In production, configure the web host to serve `index.html` for unknown routes so shared product and post links load correctly.
+
 For iOS Simulator, first make sure Flutter sees an iOS device:
 
 ```sh
