@@ -9,17 +9,17 @@ psql "${DATABASE_URL}" -v ON_ERROR_STOP=1 -c \
 
 for migration in "${MIGRATIONS_DIR}"/*.up.sql; do
   version="$(basename "${migration}" .up.sql)"
-  applied="$(psql "${DATABASE_URL}" -At -v version="${version}" -c "SELECT EXISTS (SELECT 1 FROM schema_migrations WHERE version = :'version')")"
+  applied="$(psql "${DATABASE_URL}" -At -v ON_ERROR_STOP=1 -c "SELECT EXISTS (SELECT 1 FROM schema_migrations WHERE version = '${version}')")"
   if [ "${applied}" = "t" ]; then
     echo "Skipping ${migration}"
     continue
   fi
 
   echo "Applying ${migration}"
-  psql "${DATABASE_URL}" -v ON_ERROR_STOP=1 -v version="${version}" -v migration="${migration}" <<'SQL'
+  psql "${DATABASE_URL}" -v ON_ERROR_STOP=1 <<SQL
 BEGIN;
-\i :migration
-INSERT INTO schema_migrations (version) VALUES (:'version');
+\i ${migration}
+INSERT INTO schema_migrations (version) VALUES ('${version}');
 COMMIT;
 SQL
 done
