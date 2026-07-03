@@ -66,13 +66,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
               padding: EdgeInsets.fromLTRB(
                   16, 16, 16, kinlyIsDesktop(context) ? 28 : 110),
               children: [
-                if (images.isNotEmpty) ProductImages(images: images),
-                Text(product['brand_name']?.toString() ?? '',
-                    style: Theme.of(context).textTheme.labelLarge),
-                Text(product['name']?.toString() ?? 'Product',
-                    style: Theme.of(context).textTheme.headlineSmall),
-                const SizedBox(height: 8),
-                Text(product['description']?.toString() ?? ''),
+                ProductHeroCard(product: product, images: images),
                 const SizedBox(height: 16),
                 MetricWrap(product: product),
                 const SizedBox(height: 12),
@@ -209,6 +203,90 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   }
 }
 
+class ProductHeroCard extends StatelessWidget {
+  const ProductHeroCard(
+      {super.key, required this.product, required this.images});
+
+  final Map<String, dynamic> product;
+  final List<dynamic> images;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final price = ((product['price_cents'] as num?) ?? 0) / 100;
+    return Card(
+      color: Color.alphaBlend(
+        colors.secondary.withValues(alpha: 0.08),
+        colors.surface,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 190,
+                height: 170,
+                decoration: BoxDecoration(
+                  color: colors.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: images.isEmpty
+                    ? Icon(
+                        Icons.spa_outlined,
+                        size: 74,
+                        color: colors.primary.withValues(alpha: 0.72),
+                      )
+                    : Image.network(
+                        images.first.toString(),
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Icon(
+                          Icons.image_not_supported_outlined,
+                          color: colors.onSurfaceVariant,
+                        ),
+                      ),
+              ),
+            ),
+            const SizedBox(height: 18),
+            Text(
+              product['brand_name']?.toString() ?? '',
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: colors.primary,
+                    fontWeight: FontWeight.w800,
+                  ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              product['name']?.toString() ?? 'Product',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    height: 1.1,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              product['description']?.toString() ?? '',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: colors.onSurfaceVariant, height: 1.35),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              '\$${price.toStringAsFixed(2)}',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class ProductImages extends StatelessWidget {
   const ProductImages({super.key, required this.images});
 
@@ -292,18 +370,21 @@ class ReviewTile extends ConsumerWidget {
     final colors = Theme.of(context).colorScheme;
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 6),
-      color: colors.surface,
+      color: Color.alphaBlend(
+        colors.tertiary.withValues(alpha: 0.055),
+        colors.surface,
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 CircleAvatar(
-                  radius: 22,
-                  backgroundColor: const Color(0xff9ff1df),
-                  foregroundColor: const Color(0xff073d34),
+                  radius: 24,
+                  backgroundColor: colors.primaryContainer,
+                  foregroundColor: colors.primary,
                   child: Text('${review['rating'] ?? 0}',
                       style: const TextStyle(fontWeight: FontWeight.w700)),
                 ),
@@ -416,6 +497,8 @@ class ConfidenceChip extends StatelessWidget {
       _ => Theme.of(context).colorScheme.primary,
     };
     return Chip(
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
       avatar: Icon(Icons.verified_user_outlined, size: 16, color: color),
       label: Text('${value[0].toUpperCase()}${value.substring(1)}'),
     );
@@ -608,7 +691,7 @@ class _ProfileReviewDefaults extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xffddd7cd)),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

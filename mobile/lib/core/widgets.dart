@@ -73,9 +73,9 @@ class AsyncList extends StatelessWidget {
           return EmptyState(emptyMessage);
         }
         return ListView.separated(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
           itemCount: items.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 10),
+          separatorBuilder: (_, __) => const SizedBox(height: 12),
           itemBuilder: (context, index) =>
               itemBuilder(context, items[index] as Map<String, dynamic>),
         );
@@ -97,6 +97,10 @@ class ProductCard extends StatelessWidget {
     final price = ((product['price_cents'] as num?) ?? 0) / 100;
     final colors = Theme.of(context).colorScheme;
     return Card(
+      color: Color.alphaBlend(
+        colors.primary.withValues(alpha: 0.055),
+        colors.surface,
+      ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
@@ -105,13 +109,14 @@ class ProductCard extends StatelessWidget {
           child: Row(
             children: [
               Container(
-                width: 48,
-                height: 48,
+                width: 62,
+                height: 62,
                 decoration: BoxDecoration(
-                  color: const Color(0xffd9f2ea),
-                  borderRadius: BorderRadius.circular(8),
+                  color: colors.secondaryContainer,
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                child: Icon(Icons.spa_outlined, color: colors.primary),
+                child: Icon(Icons.spa_outlined,
+                    color: colors.onSecondaryContainer, size: 28),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -143,14 +148,28 @@ class ProductCard extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               SizedBox(
-                width: 42,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.star_rate_rounded,
-                        size: 18, color: colors.primary),
-                    Text(score, style: Theme.of(context).textTheme.labelSmall),
-                  ],
+                width: 58,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: colors.primaryContainer,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.star_rate_rounded,
+                          size: 17, color: colors.primary),
+                      Text(
+                        score,
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: colors.onPrimaryContainer,
+                              fontWeight: FontWeight.w800,
+                            ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -171,6 +190,10 @@ class PostCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     return Card(
+      color: Color.alphaBlend(
+        colors.tertiary.withValues(alpha: 0.06),
+        colors.surface,
+      ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
@@ -179,11 +202,11 @@ class PostCard extends StatelessWidget {
           child: Row(
             children: [
               Container(
-                width: 44,
-                height: 44,
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
                   color: colors.tertiaryContainer,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: Icon(Icons.forum_outlined,
                     color: colors.onTertiaryContainer),

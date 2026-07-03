@@ -6,6 +6,7 @@ import '../../core/api_client.dart';
 import '../../core/auth_controller.dart';
 import '../../core/kinly_brand.dart';
 import '../../core/responsive.dart';
+import '../../core/theme_controller.dart';
 import '../../core/widgets.dart';
 
 class CommunityScreen extends ConsumerStatefulWidget {
@@ -35,6 +36,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
       appBar: AppBar(
         title: const KinlyTitle(text: 'Community'),
         actions: [
+          const ThemeModeToggle(),
           if (auth.isAuthenticated)
             IconButton(
               tooltip: 'Create post',
@@ -55,6 +57,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            CommunityHeader(selectedName: selectedCommunityName),
             FutureBuilder<List<dynamic>>(
               future: communities,
               builder: (context, snapshot) {
@@ -90,14 +93,6 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                 );
               },
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-              child: Text(selectedCommunityName,
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w700)),
-            ),
             Expanded(
               child: AsyncList(
                 future: posts,
@@ -131,6 +126,64 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
       if (selectedCommunityId.isNotEmpty) 'community_id': selectedCommunityId,
     });
     return data['data'] as List<dynamic>? ?? <dynamic>[];
+  }
+}
+
+class CommunityHeader extends StatelessWidget {
+  const CommunityHeader({super.key, required this.selectedName});
+
+  final String selectedName;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Color.alphaBlend(
+          colors.primary.withValues(alpha: 0.06),
+          colors.surface,
+        ),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: colors.outlineVariant),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: colors.primaryContainer,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.forum_outlined, color: colors.primary),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  selectedName == 'All' ? 'Community' : selectedName,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                ),
+                Text(
+                  'Browse honest product talk and routine help.',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: colors.onSurfaceVariant,
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

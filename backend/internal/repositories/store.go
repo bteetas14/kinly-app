@@ -244,24 +244,60 @@ func (s *Store) subcategories(ctx context.Context, categoryID string) ([]models.
 	return items, rows.Err()
 }
 
-func (s *Store) Brands(ctx context.Context, limit, offset int) ([]models.Brand, int64, error) {
+func (s *Store) Brands(ctx context.Context, category string, limit, offset int) ([]models.Brand, int64, error) {
+	args := []any{}
+	where := ""
+	productJoinFilter := ""
+	if category != "" {
+		args = append(args, category)
+		where = fmt.Sprintf(`
+			WHERE EXISTS (
+				SELECT 1
+				FROM products category_product
+				JOIN categories category_item ON category_item.id = category_product.category_id
+				WHERE category_product.brand_id = b.id
+				  AND category_product.deleted_at IS NULL
+				  AND (category_item.slug = $%d OR category_item.name ILIKE $%d)
+			)
+		`, len(args), len(args))
+		productJoinFilter = fmt.Sprintf(`
+			AND EXISTS (
+				SELECT 1
+				FROM categories product_category
+				WHERE product_category.id = p.category_id
+				  AND (product_category.slug = $%d OR product_category.name ILIKE $%d)
+			)
+		`, len(args), len(args))
+	}
 	var total int64
-	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM brands`).Scan(&total); err != nil {
+	if err := s.db.QueryRowContext(
+		ctx,
+		`SELECT count(*) FROM brands b `+where,
+		args...,
+	).Scan(&total); err != nil {
 		return nil, 0, err
 	}
+	queryArgs := append(append([]any{}, args...), limit, offset)
 	rows, err := s.db.QueryContext(ctx, `
-		SELECT b.id, b.name, b.description, coalesce(b.website_url, ''), b.certification_status, b.joined_at,
+		SELECT b.id, b.name, b.description, coalesce(b.website_url, ''),
+		       coalesce(b.logo_url, ''), coalesce(b.banner_url, ''),
+		       coalesce(array_to_json(array_agg(DISTINCT c.name) FILTER (WHERE c.id IS NOT NULL)), '[]'::json),
+		       coalesce(array_to_json(array_agg(DISTINCT c.slug) FILTER (WHERE c.id IS NOT NULL)), '[]'::json),
+		       b.certification_status, b.joined_at,
 		       b.violations_count, b.disputes_count, b.status,
 		       count(DISTINCT p.id)::int,
 		       count(r.id)::int,
 		       coalesce(avg(r.weighted_rating), 0)::float
 		FROM brands b
 		LEFT JOIN products p ON p.brand_id = b.id AND p.deleted_at IS NULL
+	`+productJoinFilter+`
+		LEFT JOIN categories c ON c.id = p.category_id
 		LEFT JOIN reviews r ON r.product_id = p.id AND r.deleted_at IS NULL AND r.status = 'published'
+	`+where+`
 		GROUP BY b.id
 		ORDER BY count(r.id) DESC, b.name
-		LIMIT $1 OFFSET $2
-	`, limit, offset)
+		LIMIT $`+strconv.Itoa(len(queryArgs)-1)+` OFFSET $`+strconv.Itoa(len(queryArgs))+`
+	`, queryArgs...)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -272,13 +308,18 @@ func (s *Store) Brands(ctx context.Context, limit, offset int) ([]models.Brand, 
 
 func (s *Store) BrandByID(ctx context.Context, id string) (models.Brand, error) {
 	rows, err := s.db.QueryContext(ctx, `
-		SELECT b.id, b.name, b.description, coalesce(b.website_url, ''), b.certification_status, b.joined_at,
+		SELECT b.id, b.name, b.description, coalesce(b.website_url, ''),
+		       coalesce(b.logo_url, ''), coalesce(b.banner_url, ''),
+		       coalesce(array_to_json(array_agg(DISTINCT c.name) FILTER (WHERE c.id IS NOT NULL)), '[]'::json),
+		       coalesce(array_to_json(array_agg(DISTINCT c.slug) FILTER (WHERE c.id IS NOT NULL)), '[]'::json),
+		       b.certification_status, b.joined_at,
 		       b.violations_count, b.disputes_count, b.status,
 		       count(DISTINCT p.id)::int,
 		       count(r.id)::int,
 		       coalesce(avg(r.weighted_rating), 0)::float
 		FROM brands b
 		LEFT JOIN products p ON p.brand_id = b.id AND p.deleted_at IS NULL
+		LEFT JOIN categories c ON c.id = p.category_id
 		LEFT JOIN reviews r ON r.product_id = p.id AND r.deleted_at IS NULL AND r.status = 'published'
 		WHERE b.id = $1
 		GROUP BY b.id
@@ -1073,7 +1114,8 @@ func scanBrands(rows *sql.Rows) ([]models.Brand, error) {
 	for rows.Next() {
 		var brand models.Brand
 		if err := rows.Scan(
-			&brand.ID, &brand.Name, &brand.Description, &brand.WebsiteURL, &brand.CertificationStatus, &brand.JoinedAt,
+			&brand.ID, &brand.Name, &brand.Description, &brand.WebsiteURL, &brand.LogoURL, &brand.BannerURL,
+			jsonScanner(&brand.CategoryNames), jsonScanner(&brand.CategorySlugs), &brand.CertificationStatus, &brand.JoinedAt,
 			&brand.ViolationsCount, &brand.DisputesCount, &brand.Status, &brand.ProductCount, &brand.ReviewCount, &brand.AverageRating,
 		); err != nil {
 			return nil, err

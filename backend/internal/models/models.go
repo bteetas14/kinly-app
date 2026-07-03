@@ -58,6 +58,10 @@ type Brand struct {
 	Name                string    `json:"name"`
 	Description         string    `json:"description"`
 	WebsiteURL          string    `json:"website_url"`
+	LogoURL             string    `json:"logo_url"`
+	BannerURL           string    `json:"banner_url"`
+	CategoryNames       []string  `json:"category_names"`
+	CategorySlugs       []string  `json:"category_slugs"`
 	CertificationStatus string    `json:"certification_status"`
 	JoinedAt            time.Time `json:"joined_at"`
 	ViolationsCount     int       `json:"violations_count"`

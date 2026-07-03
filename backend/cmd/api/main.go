@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log/slog"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -19,6 +21,10 @@ import (
 func main() {
 	cfg := config.Load()
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: cfg.LogLevel()}))
+	if err := cfg.Validate(); err != nil {
+		logger.Error("invalid configuration", "error", err)
+		os.Exit(1)
+	}
 
 	db, err := database.Open(cfg.DatabaseURL)
 	if err != nil {
@@ -56,10 +62,15 @@ func main() {
 		AuthService: authSvc,
 	})
 
+	server := &http.Server{
+		Addr:              ":" + cfg.Port,
+		Handler:           router,
+		ReadHeaderTimeout: 5 * time.Second,
+	}
 	serverErrors := make(chan error, 1)
 	go func() {
 		logger.Info("api listening", "port", cfg.Port)
-		serverErrors <- router.Run(":" + cfg.Port)
+		serverErrors <- server.ListenAndServe()
 	}()
 
 	shutdown := make(chan os.Signal, 1)
@@ -67,11 +78,17 @@ func main() {
 
 	select {
 	case err := <-serverErrors:
-		logger.Error("server stopped", "error", err)
+		if !errors.Is(err, http.ErrServerClosed) {
+			logger.Error("server stopped", "error", err)
+			os.Exit(1)
+		}
 	case sig := <-shutdown:
 		logger.Info("shutdown requested", "signal", sig.String())
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
-		<-ctx.Done()
+		if err := server.Shutdown(ctx); err != nil {
+			logger.Error("server shutdown", "error", err)
+			os.Exit(1)
+		}
 	}
 }

@@ -98,6 +98,8 @@ scripts/migrate.sh
 scripts/seed.sh
 ```
 
+`scripts/migrate.sh` records applied files in `schema_migrations`, so it can be rerun safely as new migrations are added.
+
 If you do not have local `psql`, use the Postgres Docker container:
 
 ```sh
@@ -108,7 +110,7 @@ docker compose cp database/seeds/000001_seed.sql postgres:/tmp/000001_seed.sql
 docker compose exec -T postgres psql -U kinly -d kinly -v ON_ERROR_STOP=1 -f /tmp/000001_seed.sql
 ```
 
-Do not rerun the migration on the same database unless you reset the database first, because the tables already exist.
+For Docker-only local setup, prefer `scripts/migrate.sh` when local `psql` is available. The manual container commands above are intended for a fresh local database.
 
 ## Start the Flutter UI
 
@@ -131,7 +133,7 @@ For a production web build:
 
 ```sh
 cd /Users/teetasbhuiya/Developer/Kinly/mobile
-flutter build web --dart-define=API_BASE_URL=https://your-api-domain.example
+flutter build web --release
 ```
 
 The built web app is written to:
@@ -141,6 +143,10 @@ mobile/build/web
 ```
 
 Kinly Web uses clean browser URLs such as `/products/{id}` and `/community/posts/{id}`. In production, configure the web host to serve `index.html` for unknown routes so shared product and post links load correctly.
+
+By default, production web builds call the API through `/api`. Use a reverse proxy that forwards `/api/*` to the backend, or pass `--dart-define=API_BASE_URL=https://your-api-domain.example` when the API is hosted on a separate domain.
+
+See [docs/deployment.md](docs/deployment.md) for production environment variables, migrations, reverse-proxy config, TLS/CORS notes, and mobile release signing.
 
 For iOS Simulator, first make sure Flutter sees an iOS device:
 

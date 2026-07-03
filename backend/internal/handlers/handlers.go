@@ -107,7 +107,12 @@ func (h *Handler) Categories(c *gin.Context) {
 
 func (h *Handler) Brands(c *gin.Context) {
 	page := utils.ReadPagination(c)
-	items, total, err := h.products.Brands(c.Request.Context(), page.PageSize, page.Offset)
+	items, total, err := h.products.Brands(
+		c.Request.Context(),
+		c.Query("category"),
+		page.PageSize,
+		page.Offset,
+	)
 	if err != nil {
 		httpx.Fail(c, err)
 		return

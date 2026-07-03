@@ -1,4 +1,4 @@
-package com.example.kinly
+package com.kinly.app
 
 import io.flutter.embedding.android.FlutterActivity
 

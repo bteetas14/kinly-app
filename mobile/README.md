@@ -15,6 +15,14 @@ Open:
 http://127.0.0.1:3000
 ```
 
+## Build for Web Production
+
+```sh
+flutter build web --release
+```
+
+Production web builds use `/api` by default. Configure the web host to proxy `/api/*` to the Kinly backend, or pass `--dart-define=API_BASE_URL=https://your-api-domain.example` for a separate API domain.
+
 ## Run on iOS
 
 ```sh

@@ -1,0 +1,38 @@
+services:
+  backend:
+    image: ${KINLY_API_IMAGE:?Set KINLY_API_IMAGE to the built backend image}
+    restart: unless-stopped
+    env_file:
+      - path: backend/.env.production
+        required: false
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/health >/dev/null 2>&1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  web:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "80:80"
+    volumes:
+      - ./mobile/build/web:/usr/share/nginx/html:ro
+      - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+
+  migrate:
+    image: postgres:16-alpine
+    profiles:
+      - migrate
+    env_file:
+      - path: backend/.env.production
+        required: false
+    volumes:
+      - ./database:/database:ro
+      - ./scripts:/scripts:ro
+    environment:
+      MIGRATIONS_DIR: /database/migrations
+    entrypoint: ["/bin/sh", "/scripts/migrate.sh"]

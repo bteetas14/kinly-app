@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"log/slog"
 	"os"
 	"strconv"
@@ -48,6 +49,37 @@ func (c Config) LogLevel() slog.Level {
 		return slog.LevelDebug
 	}
 	return slog.LevelInfo
+}
+
+func (c Config) Validate() error {
+	if c.Env != "production" {
+		return nil
+	}
+
+	if c.DatabaseURL == "" || strings.Contains(c.DatabaseURL, "localhost") {
+		return fmt.Errorf("DATABASE_URL must be set to a production database")
+	}
+	if len(c.JWTSecret) < 32 || c.JWTSecret == "local-development-secret-change-me" {
+		return fmt.Errorf("JWT_SECRET must be a production secret with at least 32 characters")
+	}
+	if len(c.CORSAllowedOrigins) == 0 {
+		return fmt.Errorf("CORS_ALLOWED_ORIGINS must list the production web origins")
+	}
+	for _, origin := range c.CORSAllowedOrigins {
+		if origin == "*" {
+			return fmt.Errorf("CORS_ALLOWED_ORIGINS cannot contain * in production")
+		}
+		if !strings.HasPrefix(origin, "https://") {
+			return fmt.Errorf("CORS_ALLOWED_ORIGINS must use https origins in production: %s", origin)
+		}
+	}
+	if c.S3Endpoint == "" || strings.Contains(c.S3Endpoint, "localhost") {
+		return fmt.Errorf("S3_ENDPOINT must be set to production object storage")
+	}
+	if c.S3Bucket == "" || c.S3AccessKey == "" || c.S3SecretKey == "" || c.S3Region == "" {
+		return fmt.Errorf("S3_BUCKET, S3_ACCESS_KEY, S3_SECRET_KEY, and S3_REGION are required in production")
+	}
+	return nil
 }
 
 func get(key, fallback string) string {

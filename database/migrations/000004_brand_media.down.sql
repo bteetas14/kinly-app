@@ -1,0 +1,3 @@
+ALTER TABLE brands
+  DROP COLUMN IF EXISTS banner_url,
+  DROP COLUMN IF EXISTS logo_url;

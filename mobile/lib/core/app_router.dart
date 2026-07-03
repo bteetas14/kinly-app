@@ -14,6 +14,7 @@ import '../features/profile/profile_screen.dart';
 import 'auth_controller.dart';
 import 'kinly_brand.dart';
 import 'responsive.dart';
+import 'theme_controller.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final auth = ref.watch(authControllerProvider);
@@ -115,39 +116,48 @@ class _MobileNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return SafeArea(
       minimum: const EdgeInsets.fromLTRB(18, 0, 18, 14),
-      child: Material(
-        elevation: 10,
-        color: Theme.of(context).colorScheme.surface,
-        shadowColor: Colors.black.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(28),
-        clipBehavior: Clip.antiAlias,
-        child: NavigationBar(
-          height: 64,
-          labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
-          selectedIndex: shell.currentIndex,
-          onDestinationSelected: shell.goBranch,
-          backgroundColor: Colors.transparent,
-          indicatorColor: Theme.of(context).colorScheme.primaryContainer,
-          destinations: const [
-            NavigationDestination(
-                icon: Icon(Icons.home_outlined),
-                selectedIcon: Icon(Icons.home_rounded),
-                label: 'Home'),
-            NavigationDestination(
-                icon: Icon(Icons.mode_comment_outlined),
-                selectedIcon: Icon(Icons.mode_comment_rounded),
-                label: 'Community'),
-            NavigationDestination(
-                icon: Icon(Icons.notifications_none_rounded),
-                selectedIcon: Icon(Icons.notifications_rounded),
-                label: 'Notifications'),
-            NavigationDestination(
-                icon: Icon(Icons.person_outline_rounded),
-                selectedIcon: Icon(Icons.person_rounded),
-                label: 'Profile'),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(32),
+          border: Border.all(color: colors.outlineVariant),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.14),
+              blurRadius: 24,
+              offset: const Offset(0, 10),
+            ),
           ],
+        ),
+        child: Material(
+          color: colors.surface.withValues(alpha: 0.96),
+          borderRadius: BorderRadius.circular(32),
+          clipBehavior: Clip.antiAlias,
+          child: NavigationBar(
+            labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
+            selectedIndex: shell.currentIndex,
+            onDestinationSelected: shell.goBranch,
+            destinations: const [
+              NavigationDestination(
+                  icon: Icon(Icons.home_outlined),
+                  selectedIcon: Icon(Icons.home_rounded),
+                  label: 'Home'),
+              NavigationDestination(
+                  icon: Icon(Icons.forum_outlined),
+                  selectedIcon: Icon(Icons.forum_rounded),
+                  label: 'Community'),
+              NavigationDestination(
+                  icon: Icon(Icons.notifications_none_rounded),
+                  selectedIcon: Icon(Icons.notifications_rounded),
+                  label: 'Notifications'),
+              NavigationDestination(
+                  icon: Icon(Icons.person_outline_rounded),
+                  selectedIcon: Icon(Icons.person_rounded),
+                  label: 'Profile'),
+            ],
+          ),
         ),
       ),
     );
@@ -161,16 +171,26 @@ class _DesktopNavRail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return NavigationRail(
       selectedIndex: shell.currentIndex,
       onDestinationSelected: shell.goBranch,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      indicatorColor: Theme.of(context).colorScheme.primaryContainer,
+      backgroundColor: colors.surface,
+      indicatorColor: colors.primaryContainer,
       minWidth: 78,
       labelType: NavigationRailLabelType.none,
       leading: const Padding(
         padding: EdgeInsets.only(top: 22, bottom: 20),
         child: KinlyLogo(size: 38),
+      ),
+      trailing: const Expanded(
+        child: Align(
+          alignment: Alignment.bottomCenter,
+          child: Padding(
+            padding: EdgeInsets.only(bottom: 18),
+            child: ThemeModeToggle(),
+          ),
+        ),
       ),
       destinations: const [
         NavigationRailDestination(

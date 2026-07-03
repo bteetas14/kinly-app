@@ -35,8 +35,8 @@ func (s *ProductService) Categories(ctx context.Context) ([]models.Category, err
 	return s.store.Categories(ctx)
 }
 
-func (s *ProductService) Brands(ctx context.Context, limit, offset int) ([]models.Brand, int64, error) {
-	return s.store.Brands(ctx, limit, offset)
+func (s *ProductService) Brands(ctx context.Context, category string, limit, offset int) ([]models.Brand, int64, error) {
+	return s.store.Brands(ctx, category, limit, offset)
 }
 
 func (s *ProductService) Brand(ctx context.Context, id string) (models.Brand, error) {

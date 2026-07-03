@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/api_client.dart';
 import '../../core/kinly_brand.dart';
 import '../../core/responsive.dart';
+import '../../core/theme_controller.dart';
 import '../../core/widgets.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -30,13 +31,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       appBar: AppBar(
         title: const KinlyTitle(),
         centerTitle: false,
-        actions: [
-          IconButton(
-            tooltip: 'Explore filters',
-            icon: const Icon(Icons.tune),
-            onPressed: () => context.go('/explore'),
-          ),
-        ],
+        actions: const [ThemeModeToggle()],
       ),
       body: KinlyPageFrame(
         maxWidth: 1080,
@@ -54,52 +49,42 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               CategoryBrowse(
                 future: _list(api, '/categories', const {}),
               ),
+              const SectionHeader('Trending Products'),
+              HomePreviewList(
+                future: _list(
+                    api, '/products', {'sort': 'trending', 'page_size': 3}),
+                itemBuilder: (context, item) => ProductCard(
+                  product: item,
+                  onTap: () => context.go('/products/${item['id']}'),
+                ),
+              ),
               BrandBrowse(
                 future: _list(api, '/brands', {'page_size': 8}),
               ),
-              const SectionHeader('Trending Products'),
-              SizedBox(
-                height: 250,
-                child: AsyncList(
-                  future: _list(
-                      api, '/products', {'sort': 'trending', 'page_size': 5}),
-                  itemBuilder: (context, item) => ProductCard(
-                    product: item,
-                    onTap: () => context.go('/products/${item['id']}'),
-                  ),
-                ),
-              ),
               const SectionHeader('Popular Discussions'),
-              SizedBox(
-                height: 250,
-                child: AsyncList(
-                  future: _list(api, '/posts', {'page_size': 5}),
-                  itemBuilder: (context, item) => PostCard(
-                    post: item,
-                    onTap: () => context.go('/community/posts/${item['id']}'),
-                  ),
+              HomePreviewList(
+                future: _list(api, '/posts', {'page_size': 3}),
+                itemBuilder: (context, item) => PostCard(
+                  post: item,
+                  onTap: () => context.go('/community/posts/${item['id']}'),
                 ),
               ),
               const SectionHeader('Recently Reviewed Products'),
-              SizedBox(
-                height: 250,
-                child: AsyncList(
-                  future: _list(
-                      api, '/products', {'sort': 'newest', 'page_size': 5}),
-                  itemBuilder: (context, item) => ProductCard(
-                      product: item,
-                      onTap: () => context.go('/products/${item['id']}')),
+              HomePreviewList(
+                future:
+                    _list(api, '/products', {'sort': 'newest', 'page_size': 3}),
+                itemBuilder: (context, item) => ProductCard(
+                  product: item,
+                  onTap: () => context.go('/products/${item['id']}'),
                 ),
               ),
               const SectionHeader('Community Picks'),
-              SizedBox(
-                height: 250,
-                child: AsyncList(
-                  future: _list(api, '/products',
-                      {'sort': 'highest_rated', 'page_size': 5}),
-                  itemBuilder: (context, item) => ProductCard(
-                      product: item,
-                      onTap: () => context.go('/products/${item['id']}')),
+              HomePreviewList(
+                future: _list(api, '/products',
+                    {'sort': 'highest_rated', 'page_size': 3}),
+                itemBuilder: (context, item) => ProductCard(
+                  product: item,
+                  onTap: () => context.go('/products/${item['id']}'),
                 ),
               ),
             ],
@@ -125,6 +110,54 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 }
 
+class HomePreviewList extends StatelessWidget {
+  const HomePreviewList({
+    super.key,
+    required this.future,
+    required this.itemBuilder,
+  });
+
+  final Future<List<dynamic>> future;
+  final Widget Function(BuildContext context, Map<String, dynamic> item)
+      itemBuilder;
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<dynamic>>(
+      future: future,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const Padding(
+            padding: EdgeInsets.all(28),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (snapshot.hasError) {
+          return EmptyState(snapshot.error.toString());
+        }
+        final items = (snapshot.data ?? <dynamic>[])
+            .take(3)
+            .cast<Map<String, dynamic>>()
+            .toList();
+        if (items.isEmpty) {
+          return const EmptyState('Nothing to show yet.');
+        }
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+          child: Column(
+            children: [
+              for (var index = 0; index < items.length; index++) ...[
+                itemBuilder(context, items[index]),
+                if (index != items.length - 1) const SizedBox(height: 10),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
 class CategoryBrowse extends StatelessWidget {
   const CategoryBrowse({super.key, required this.future});
 
@@ -142,20 +175,18 @@ class CategoryBrowse extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SectionHeader('Browse Categories'),
+            const SectionHeader('Explore by Category'),
             SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
                   for (final item in items.cast<Map<String, dynamic>>()) ...[
-                    ActionChip(
-                      avatar: const Icon(Icons.category_outlined, size: 18),
-                      label: Text(item['name']?.toString() ?? ''),
-                      onPressed: () => context.go(
-                          '/explore?category=${Uri.encodeQueryComponent(item['slug']?.toString() ?? '')}'),
+                    CategoryBubble(
+                      name: item['name']?.toString() ?? '',
+                      slug: item['slug']?.toString() ?? '',
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 12),
                   ],
                 ],
               ),
@@ -164,6 +195,64 @@ class CategoryBrowse extends StatelessWidget {
         );
       },
     );
+  }
+}
+
+class CategoryBubble extends StatelessWidget {
+  const CategoryBubble({super.key, required this.name, required this.slug});
+
+  final String name;
+  final String slug;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return InkWell(
+      borderRadius: BorderRadius.circular(999),
+      onTap: () =>
+          context.go('/explore?category=${Uri.encodeQueryComponent(slug)}'),
+      child: SizedBox(
+        width: 76,
+        child: Column(
+          children: [
+            Container(
+              width: 58,
+              height: 58,
+              decoration: BoxDecoration(
+                color: colors.primaryContainer,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: colors.primary.withValues(alpha: 0.10),
+                ),
+              ),
+              child: Icon(_categoryIcon(name), color: colors.primary),
+            ),
+            const SizedBox(height: 7),
+            Text(
+              name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: colors.onSurface,
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  IconData _categoryIcon(String value) {
+    final name = value.toLowerCase();
+    if (name.contains('skin')) return Icons.face_retouching_natural_outlined;
+    if (name.contains('hair')) return Icons.content_cut_outlined;
+    if (name.contains('makeup')) return Icons.brush_outlined;
+    if (name.contains('body')) return Icons.spa_outlined;
+    if (name.contains('wellness')) return Icons.self_improvement_outlined;
+    if (name.contains('fashion')) return Icons.checkroom_outlined;
+    return Icons.category_outlined;
   }
 }
 
@@ -194,9 +283,17 @@ class BrandBrowse extends StatelessWidget {
                 separatorBuilder: (_, __) => const SizedBox(width: 10),
                 itemBuilder: (context, index) {
                   final brand = items[index] as Map<String, dynamic>;
+                  final colors = Theme.of(context).colorScheme;
+                  final dark = Theme.of(context).brightness == Brightness.dark;
                   return SizedBox(
-                    width: 190,
+                    width: 188,
                     child: Card(
+                      color: dark
+                          ? const Color(0xff242321)
+                          : Color.alphaBlend(
+                              colors.secondary.withValues(alpha: 0.08),
+                              colors.surface,
+                            ),
                       clipBehavior: Clip.antiAlias,
                       child: InkWell(
                         onTap: () => context.go('/brands/${brand['id']}'),
@@ -205,7 +302,8 @@ class BrandBrowse extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Icon(Icons.verified_outlined),
+                              Icon(Icons.verified_outlined,
+                                  color: colors.primary),
                               const Spacer(),
                               Text(
                                 brand['name']?.toString() ?? 'Brand',
@@ -214,9 +312,17 @@ class BrandBrowse extends StatelessWidget {
                                 style: Theme.of(context)
                                     .textTheme
                                     .titleSmall
-                                    ?.copyWith(fontWeight: FontWeight.w700),
+                                    ?.copyWith(
+                                      color: colors.onSurface,
+                                      fontWeight: FontWeight.w700,
+                                    ),
                               ),
-                              Text('${brand['review_count'] ?? 0} reviews'),
+                              Text(
+                                '${brand['review_count'] ?? 0} reviews',
+                                style: TextStyle(
+                                    color: colors.onSurfaceVariant,
+                                    fontWeight: FontWeight.w600),
+                              ),
                             ],
                           ),
                         ),
@@ -248,42 +354,56 @@ class HomeSearchHeader extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 14),
+      padding: const EdgeInsets.fromLTRB(20, 22, 20, 20),
       decoration: BoxDecoration(
-        color: colors.surface,
-        border: const Border(
-          bottom: BorderSide(color: Color(0xffe7e1d8)),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            colors.primaryContainer,
+            Color.alphaBlend(
+              colors.secondary.withValues(alpha: 0.10),
+              colors.surface,
+            ),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: colors.primary.withValues(alpha: 0.10),
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Find products people actually use',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            'Honest beauty starts here.',
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  color: colors.onPrimaryContainer,
                   fontWeight: FontWeight.w800,
                   height: 1.15,
                 ),
           ),
           const SizedBox(height: 6),
           Text(
-            'Search skincare, makeup, haircare, wellness, fashion, and brands.',
-            style: Theme.of(context)
-                .textTheme
-                .bodyMedium
-                ?.copyWith(color: colors.onSurfaceVariant),
+            'Real people. Real reviews. Better decisions.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: colors.onPrimaryContainer.withValues(alpha: 0.76)),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 20),
           SearchBar(
             controller: controller,
-            hintText: 'Search products, brands, categories',
+            hintText: 'Search products, brands, ingredients...',
             leading: const Icon(Icons.search),
-            elevation: const WidgetStatePropertyAll(0),
-            backgroundColor: WidgetStatePropertyAll(colors.surfaceContainerLow),
+            elevation: const WidgetStatePropertyAll(2),
+            shadowColor:
+                WidgetStatePropertyAll(colors.shadow.withValues(alpha: 0.12)),
+            backgroundColor: WidgetStatePropertyAll(colors.surface),
             shape: WidgetStatePropertyAll(
               RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(28),
-                side: const BorderSide(color: Color(0xffddd7cd)),
+                borderRadius: BorderRadius.circular(999),
+                side: BorderSide(
+                    color: colors.onPrimaryContainer.withValues(alpha: 0.08)),
               ),
             ),
             padding: const WidgetStatePropertyAll(

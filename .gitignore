@@ -9,9 +9,12 @@ mobile/.dart_tool/
 mobile/.flutter-plugins
 mobile/.flutter-plugins-dependencies
 mobile/build/
+mobile/android/key.properties
+mobile/android/*.jks
 
 # Local env
 backend/.env
+backend/.env.production
 
 # Docker volumes
 postgres_data/
