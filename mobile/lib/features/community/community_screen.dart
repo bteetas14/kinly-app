@@ -36,7 +36,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
       appBar: AppBar(
         title: const KinlyTitle(text: 'Community'),
         actions: [
-          const ThemeModeToggle(),
+          const MobileThemeModeAction(),
           if (auth.isAuthenticated)
             IconButton(
               tooltip: 'Create post',

@@ -16,7 +16,7 @@ class NotificationsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const KinlyTitle(text: 'Notifications'),
-        actions: const [ThemeModeToggle()],
+        actions: const [MobileThemeModeAction()],
       ),
       body: KinlyPageFrame(
         maxWidth: 760,

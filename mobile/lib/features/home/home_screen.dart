@@ -31,7 +31,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       appBar: AppBar(
         title: const KinlyTitle(),
         centerTitle: false,
-        actions: const [ThemeModeToggle()],
+        actions: const [MobileThemeModeAction()],
       ),
       body: KinlyPageFrame(
         maxWidth: 1080,

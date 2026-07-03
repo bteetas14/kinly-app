@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'auth_controller.dart';
+import 'responsive.dart';
 
 const _themeModeKey = 'theme_mode';
 
@@ -44,5 +45,17 @@ class ThemeModeToggle extends ConsumerWidget {
           .read(themeControllerProvider.notifier)
           .setMode(dark ? ThemeMode.light : ThemeMode.dark),
     );
+  }
+}
+
+class MobileThemeModeAction extends StatelessWidget {
+  const MobileThemeModeAction({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    if (kinlyIsDesktop(context)) {
+      return const SizedBox.shrink();
+    }
+    return const ThemeModeToggle();
   }
 }

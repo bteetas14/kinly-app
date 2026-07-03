@@ -97,7 +97,7 @@ class AppShell extends StatelessWidget {
       body: desktop
           ? Row(
               children: [
-                _DesktopNavRail(shell: shell),
+                _DesktopSidebar(shell: shell),
                 const VerticalDivider(width: 1),
                 Expanded(child: shell),
               ],
@@ -164,8 +164,8 @@ class _MobileNavBar extends StatelessWidget {
   }
 }
 
-class _DesktopNavRail extends StatelessWidget {
-  const _DesktopNavRail({required this.shell});
+class _DesktopSidebar extends StatelessWidget {
+  const _DesktopSidebar({required this.shell});
 
   final StatefulNavigationShell shell;
 
@@ -177,49 +177,56 @@ class _DesktopNavRail extends StatelessWidget {
       onDestinationSelected: shell.goBranch,
       backgroundColor: colors.surface,
       indicatorColor: colors.primaryContainer,
-      minWidth: 78,
+      extended: true,
+      minWidth: 88,
+      minExtendedWidth: 224,
       labelType: NavigationRailLabelType.none,
-      leading: const Padding(
-        padding: EdgeInsets.only(top: 22, bottom: 20),
-        child: KinlyLogo(size: 38),
+      leading: Padding(
+        padding: const EdgeInsets.fromLTRB(22, 22, 22, 24),
+        child: SizedBox(
+          width: 176,
+          child: Row(
+            children: [
+              const KinlyLogo(size: 38),
+              const SizedBox(width: 12),
+              Text(
+                'Kinly',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+              ),
+            ],
+          ),
+        ),
       ),
       trailing: const Expanded(
         child: Align(
-          alignment: Alignment.bottomCenter,
+          alignment: Alignment.bottomLeft,
           child: Padding(
-            padding: EdgeInsets.only(bottom: 18),
+            padding: EdgeInsets.only(left: 28, bottom: 18),
             child: ThemeModeToggle(),
           ),
         ),
       ),
       destinations: const [
         NavigationRailDestination(
-          icon: Tooltip(message: 'Home', child: Icon(Icons.home_outlined)),
-          selectedIcon:
-              Tooltip(message: 'Home', child: Icon(Icons.home_rounded)),
+          icon: Icon(Icons.home_outlined),
+          selectedIcon: Icon(Icons.home_rounded),
           label: Text('Home'),
         ),
         NavigationRailDestination(
-          icon: Tooltip(
-              message: 'Community', child: Icon(Icons.mode_comment_outlined)),
-          selectedIcon: Tooltip(
-              message: 'Community', child: Icon(Icons.mode_comment_rounded)),
+          icon: Icon(Icons.forum_outlined),
+          selectedIcon: Icon(Icons.forum_rounded),
           label: Text('Community'),
         ),
         NavigationRailDestination(
-          icon: Tooltip(
-              message: 'Notifications',
-              child: Icon(Icons.notifications_none_rounded)),
-          selectedIcon: Tooltip(
-              message: 'Notifications',
-              child: Icon(Icons.notifications_rounded)),
+          icon: Icon(Icons.notifications_none_rounded),
+          selectedIcon: Icon(Icons.notifications_rounded),
           label: Text('Notifications'),
         ),
         NavigationRailDestination(
-          icon: Tooltip(
-              message: 'Profile', child: Icon(Icons.person_outline_rounded)),
-          selectedIcon:
-              Tooltip(message: 'Profile', child: Icon(Icons.person_rounded)),
+          icon: Icon(Icons.person_outline_rounded),
+          selectedIcon: Icon(Icons.person_rounded),
           label: Text('Profile'),
         ),
       ],

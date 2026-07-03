@@ -48,7 +48,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       appBar: AppBar(
         title: const KinlyTitle(text: 'Profile'),
         actions: [
-          const ThemeModeToggle(),
+          const MobileThemeModeAction(),
           IconButton(
             tooltip: 'Sign out',
             icon: const Icon(Icons.logout),
